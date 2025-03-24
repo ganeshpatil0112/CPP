@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": " C:/gcc-14.2.0/bin/gcc.exe",
+            "compilerArgs": [
+                "-Wall",
+                "-Wextra"
+            ],
+            "intelliSenseMode": "windows-gcc-x64",
+            "configurationProvider": "${default}",
+            "cStandard": "gnu17",
+            "mergeConfigurations": true
+        }
+    ],
+    "version": 4
+}
