@@ -27,23 +27,23 @@ void stl()
     //mapobj.print(rankss);
 }
 
-void multithreading()
+void fmultithreading()
 {
-    //multithreading threadobject1, threadobject2;
-    //int value = 1000000;
+    multithreading threadobject1, threadobject2;
+    int value = 1000000;
 
-    //auto start = chrono::steady_clock::now();
-    //cout<<"Type : "<<typeid(start).name()<<endl;
+    auto start = chrono::steady_clock::now();
+    cout<<"Type : "<<typeid(start).name()<<endl;
 
-    // thread t1(&multithreading::mutex_operations, &threadobject1, value);
-    // thread t2(&multithreading::mutex_operations, &threadobject2, value);
+    thread t1(&multithreading::mutex_operations, &threadobject1, value);
+    thread t2(&multithreading::mutex_operations, &threadobject2, value);
 
-    // cout<<"Main thread id : "<<this_thread::get_id()<<endl;
+    cout<<"Main thread id : "<<this_thread::get_id()<<endl;
 
-    // t1.join();
-    // t2.join();
+    t1.join();
+    t2.join();
 
-    // cout<<"Count : "<<multithreading::count<<endl;
+    cout<<"Count : "<<multithreading::count<<endl;
 }
 
 //void dynamic_memory();
@@ -62,7 +62,7 @@ int main()
     {
         std::cout << "Hello World C++! = Version = "<<__cplusplus<<endl;
         //fun(stl);
-        //fun(multithreading);
+        //fun(fmultithreading);
         fun(memory_management);
 
         return 0;

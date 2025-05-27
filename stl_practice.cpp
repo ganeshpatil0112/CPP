@@ -54,7 +54,7 @@ struct OrderHash
     }
 };
 
-/*
+
 void fun_vector()
 {
     cout<<"\n\n---Vector---"<<endl;
@@ -99,6 +99,7 @@ void fun_vector()
         it.print();
     }
 
+    //for find() we have to overload the == operator
     vector<order>::iterator it = find(order_vec.begin(), order_vec.end(), order(2, "order2"));
     if(it != order_vec.end())
     {
@@ -127,6 +128,7 @@ void fun_set()
     order_set.insert(order(2, "order2"));
     order_set.insert(order(3, "order3"));
 
+    //for find() we have to overload the == operator
     // Check if an order exists
     order search_order(2, "order2");
     if (order_set.find(search_order) != order_set.end()) {
@@ -158,7 +160,7 @@ void fun_unset()
 
 
 }
-*/
+
 void fun_map()
 {
     cout<<"\n\n---MAP---"<<endl;

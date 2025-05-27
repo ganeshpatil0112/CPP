@@ -140,3 +140,39 @@ string rtrim(const string &str) {
 
     return s;
 }
+
+
+/*
+You are given an array of length n which was originally sorted in ascending order.
+It has now been rotated between 1 and n times. 
+For example, the array nums = [1,2,3,4,5,6] might become:
+- [6,1,2,3,4,5] if it was rotated 1 time.
+- [3,4,5,6,1,2] if it was rotated 4 times.
+- [1,2,3,4,5,6] if it was rotated 6 times.
+
+You do not know how many times the array was rotated.
+
+Find the minimum element in the given array nums.
+
+You can assume that all elements in the array are unique.
+
+int findMin(std::vector<int> nums)
+{
+   int minimum = nums[0];
+   
+   for_each(nums.begin(), nums.end(), [](const int& a){
+      if(minimum > a)
+          minimum = a;
+          break;
+   })
+   
+   return minimum;
+	
+}
+
+++ Using Binary Search !!
+*/
+
+
+
+
