@@ -103,7 +103,7 @@ void fun_vector()
     vector<order>::iterator it = find(order_vec.begin(), order_vec.end(), order(2, "order2"));
     if(it != order_vec.end())
     {
-        cout<<"\nOrder id is present!!"<<endl;
+        cout<<"\nOrder id is present!!"<<it->id<<endl;
     }
     
     it = min_element(order_vec.begin(), order_vec.end());

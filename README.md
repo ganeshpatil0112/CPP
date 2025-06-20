@@ -105,3 +105,55 @@ void maps::operations()
     }
 }
 ```
+
+
+<div align="center">
+  <span><img src="./loginScreen.jpg" height=100 width=100 /></span>
+  <span><img src="./aligner.png" height=50 width=50 /></span> <!--invisible-->
+  <span><img src="./Expenses.jpg" height=100 width=150 /></span>
+</div>
+
+
+<div style="display: flex; justify-content: space-between; gap: 20px;">
+
+<div style="flex: 1; padding: 10px; border: 1px solid #ddd;">
+<h3>Function 1: `rtrim`</h3>
+<pre>
+<code class="cpp">
+string rtrim(const string &str) {
+    string s(str);
+
+    s.erase(
+        find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(),
+        s.end()
+    );
+
+    return s;
+}
+</code>
+</pre>
+</div>
+
+<div style="flex: 1; padding: 10px; border: 1px solid #ddd;">
+<h3>Function 2: `maps::operations`</h3>
+<pre>
+<code class="cpp">
+void maps::operations() {
+    //update and .find() value of map
+    rank[4] = "Fourth";
+    rankss.insert({"Akshay", "Borase"});
+
+    print(rankss);
+    string value = to_string(ranks["Tenth"]);
+    cout<<endl<<ranks["Tenth"]<<", At: "<<ranks.at("Tenth")<<", Size: "<<ranks.size()<<", Count: "<<ranks.count("Tenth")<<", ";
+
+    auto it = ranks.find("First");
+    if(it != ranks.end()) {
+        cout<<"Find: {"<<it->first<<":"<<it->second<<"}";
+    }
+}
+</code>
+</pre>
+</div>
+
+</div>
