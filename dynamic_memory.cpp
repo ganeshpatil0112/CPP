@@ -75,7 +75,8 @@ void TradeOrder::dynamic_memory_management()
 {
     cout<<"\n---Dynamic Memory Management---"<<endl;
     int *ptrnum = new int(5);
-    int num = 5, size = 3, order = 1;
+    constexpr int num = 5, size = 3;
+    int order = 1;
 
     //The below notes are only in case of Poniter Arrays:
     /* 1--> This will Create Array Pointer and directly alloacte continuous memeory location of 5 integer in directly into HEAP memory.
@@ -247,7 +248,7 @@ void TradeOrder::smart_pointer(){
 
     weak_ptr<TradeOrder> wek_ptr = shr_objptr3;
 
-    if(!shr_objptr1.unique())
+    if(shr_objptr1.use_count() != 1)
         cout<<"\nTotal number of active strong refernce of Shared_Prt : "<<shr_objptr1.use_count()<<endl;  //:3
 
 

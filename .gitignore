@@ -1,0 +1,24 @@
+# Compiled Object files
+*.o
+*.obj
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debugger files
+*.ilk
+*.pdb
+
+# Build directories
+build/
+output/
+Debug/
+Release/
+
+# VS Code
+#.vscode/*
+#!.vscode/tasks.json
+#!.vscode/launch.json
+#!.vscode/c_cpp_properties.json
