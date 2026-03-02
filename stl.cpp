@@ -2,6 +2,7 @@
 #include<vector>
 #include<deque>
 #include<map>
+#include<string>
 #include<algorithm>
 using namespace std;
 
@@ -16,9 +17,9 @@ class stl
     // {
     //     cout<<"STL Over XXX\n";
     // }
-    void print();
-    void print(int);
-    void operatios();
+    virtual void print() = 0; //pure virtual function
+    virtual void print(int);
+    virtual void operations()=0; //pure virtual function
 };
 
 class vectores: public stl
@@ -33,8 +34,8 @@ class vectores: public stl
     {
         cout<<"Vectores Over XXX\n";
     }
-    void print();
-    void operations();
+    void print() override;
+    void operations() override;
 };
 
 class deques:public stl
@@ -49,8 +50,8 @@ class deques:public stl
     {
         cout<<"Deque Over XXX\n";
     }
-    void print();
-    void operations();
+    void print() override;
+    void operations() override;
 };
 
 class maps:public stl
@@ -59,14 +60,14 @@ class maps:public stl
     map<string, int> ranks = {{"Tenth", 10}, {"First", 1}, {"Seventh", 7},{"Fourth", 4}};
     map<string, string> rankss = {{"Ganesh", "Patil"}, {"Tejas", "Borase"}, {"Gopal", "Patil"}, {"Asir", "Shaikh"}};
     public:
-    void print(map<string, string>&);
-    void operations();
+    void print() override;
+    void operations() override;
 };
 
-void maps::print(map<string, string> &ran)
+void maps::print()
 {
-    auto it = ran.begin();
-    while(it != ran.end())
+    auto it = rankss.begin();
+    while(it != rankss.end())
     {
         cout<<it->first<<" : "<<it->second<<endl;
         it++;
@@ -79,7 +80,7 @@ void maps::operations()
     //update and .find() value of map
     rank[4] = "Fourth";
     rankss.insert({"Akshay", "Borase"});
-    print(rankss);
+    print();
     string value = to_string(ranks["Tenth"]);
     cout<<endl<<ranks["Tenth"]<<", At: "<<ranks.at("Tenth")<<", Size: "<<ranks.size()<<", Count: "<<ranks.count("Tenth")<<", ";
 
@@ -93,24 +94,26 @@ void maps::operations()
     }
 }
 
-/*int main() {
+
+int main() {
     std::cout << "Hello World STL!\n";
-    //vectores vecobj;
-    //stl stlobj;
-    //stlobj.print();
-    //vecobj.print();
-    //vecobj.operations();
+    vectores vecobj;
+    stl *stlobj = &vecobj;
+    stlobj->print();
+    stlobj->operations();
     
-    //deques deqobj;
-    //deqobj.print();
-    //deqobj.operations();
+    deques deqobj;
+    stlobj = &deqobj;
+    stlobj->print();
+    stlobj->operations();
     
     maps mapobj;
-    mapobj.operations();
-    //mapobj.print(rankss);
+    stlobj = &mapobj;
+    stlobj->operations();
+    stlobj->print();
     
     return 0;
-}*/
+}
 
 void stl::print(int x)
 {
@@ -133,13 +136,13 @@ void vectores::print()
 void vectores::operations()
 {
     //find() in all stl
-    cout<<"vectore capacity : "<<carspeed.capacity();
+    cout<<"vectore capacity : "<<carspeed.capacity(); //print total capacity of vector
     cout<<"\nvectore size : "<<carspeed.size();
     carspeed.push_back(9);
     carspeed.push_back(10);
     carspeed.pop_back();
     carspeed.pop_back();
-    carspeed.resize(5,1);
+    carspeed.resize(5,1); //resize vector size to 5 and fill new elements with 1
     carspeed.shrink_to_fit();
     carspeed.push_back(10);
     cout<<"\nvectore capacity : "<<carspeed.capacity();
@@ -154,8 +157,7 @@ void vectores::operations()
 
     auto it2 = find(carspeed.begin(), carspeed.end(), 5);
     cout<<"\nFind : Element 5 is present at position : "<<*it2<<endl;
-    
-    //carspeed.assign(1, 11);
+
     carspeed.erase(carspeed.begin()+3);
     sort(carspeed.begin(), carspeed.end());
     
@@ -165,6 +167,36 @@ void vectores::operations()
     for(vector<int>::iterator it = carspeed.begin(); it != carspeed.end(); it++){
         cout<<*it<<" ";
     }cout<<endl;
+
+    ////In C++, the vector assign() is a built-in method used to assign the new values to the given vector by replacing old ones.
+    // It also modifies the size of the vector according to the given number of elements.
+    //Use assign() when you want to completely replace all vector contents with new repeated values.
+    // Before assign(): carspeed = {1, 3, 5, 6, 1, 10}
+    // carspeed.assign(1, 11); //assign 1 element with value 11 and resize vector to 1
+    // After assign():  carspeed = {11}
+
+    //insert() inserts element(s) at a specified position in the vector, shifting existing elements to the right.
+    vector<int> vec = {1, 2, 3, 4};
+    vec.insert(vec.begin() + 2, 99);
+    // Result: {1, 2, 99, 3, 4}
+    //                 ↑ inserted at index 2
+
+    // vector<int> vec = {1, 2, 3};
+    // vec.insert(vec.begin(), 0);
+    // Result: {0, 1, 2, 3}
+
+    // vector<int> vec = {1, 5};
+    // vec.insert(vec.begin() + 1, 3, 99);
+    // Result: {1, 99, 99, 99, 5}
+    //             ↑  3 copies of 99
+
+    // vector<int> vec1 = {1, 2, 7, 8};
+    // vector<int> vec2 = {3, 4, 5, 6};
+
+    // vec1.insert(vec1.begin() + 2, vec2.begin(), vec2.begin() + 3);
+    // Result: {1, 2, 3, 4, 5, 7, 8}
+    //              ↑  inserted 3,4,5 from vec2
+
 }
 
 void deques::print()

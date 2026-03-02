@@ -59,7 +59,7 @@ void fun_vector()
 {
     cout<<"\n\n---Vector---"<<endl;
     vector<shared_ptr<order>> shr_order_vec; //= {order(1, "order1"), order(2, "order2")};
-    shr_order_vec.push_back(shared_ptr<order>(new order(1, "order1")));
+    shr_order_vec.push_back(make_shared<order>(new order(1, "order1")));
 
     vector<order> order_vec;
     order_vec.push_back(order(2, "order2"));
@@ -106,9 +106,11 @@ void fun_vector()
         cout<<"\nOrder id is present!!"<<it->id<<endl;
     }
     
+    //for min_element() we have to overload the > operator
     it = min_element(order_vec.begin(), order_vec.end());
     cout<<"\nMin Element : "; it->print();
 
+    //for max_element() we have to overload the < operator
     it = max_element(order_vec.begin(), order_vec.end());
     cout<<"\nMax Element : "; it->print();
 
@@ -123,7 +125,7 @@ void fun_set()
     cout<<"\n\n---Ordered Set---"<<endl;
     set<order> order_set;
 
-        // Insert orders into the unordered_set
+    // Insert orders into the ordered_set
     order_set.insert(order(1, "order1"));
     order_set.insert(order(2, "order2"));
     order_set.insert(order(3, "order3"));
@@ -157,7 +159,6 @@ void fun_unset()
     } else {
         cout << "Order not found." << endl;
     }
-
 
 }
 
@@ -210,7 +211,7 @@ void fun_list()
 
 }
 
-void fun(void (*function)())
+void fun(void (*function)()) //function pointor as parameter
 {
     function();
 }

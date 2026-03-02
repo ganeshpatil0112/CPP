@@ -92,7 +92,7 @@ void TradeOrder::dynamic_memory_management()
      After this we have to manually alloacte the NEW() HEAP memory to every pointer location by iterating through each, 
      and this will Randomaly allaocate memory NOT in continuous location. Thats why at the time of deletion we have to delete each location separatally by iterating through each location.
      This behaviour applicable in case of the ARRAY POINTER only, Premitive data type will work as per the expected. 
-     */
+    */
     int *arrptrnum[num];
 
     // 3--> Array variables of premitive 

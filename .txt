@@ -1,0 +1,381 @@
+Dhanu vrushbh sinha
+
+try witb 3 resouses
+Override with diff return type is posible.
+equeals and hashcode.
+
+in case of vectore, 
+array (because array is also int *), 
+Shared_ptr(copy controctore will copy the same memory location? or we have to copy and how to copy?) and 
+Unique_ptr (copy controctore will copy the same memory location? or we have to copy and how to copy? we cannot copy unique_ptr)
+how Copy constructor will behave.
+
+what memory copy does? does it works for the user define objects as well?
+
+why we need virtual destrucotr?
+noexcept in C++?
+explicit in c++
+what is mean by the making constructor and destructor default?
+
+Finastra C++ questions:
+Based on OOP
+1) what are the OOP concepts/pillars of OPP
+2)what is Polymorphism 
+3)what are pointers initialisation in polymorphism 
+4)what is virtual table and virtual pointers
+5) Write the code for pointers initialisation for polymorphism 
+6)what I can do so that I can't use the same function in inherited class
+7) Difference between object creation using (new keyword ) vs normal keyword
+8)Copy constructor
+9)static keyword
+10)virtual functions as I overriding the function 
+
+internal implimentation of stl.
+
+Check correctly selecting the data structure?
+Check correctly selecting the right best optimum algorithm 
+
+
+3 - 5 - 0 rules
+
+std::vector<TypeX> vector1;
+std::vector<TypeX> *vector2 = new vector<TypeX>();
+std::vector<TypeX*> vector3;
+what exactly is difference between them?
+
+
+Solid Principles
+Single Responsibility Principle (SRP)
+Open Closed Principle (OCP)
+Liskov Substitution Principle (LSP)
+Interface Segregation Principle (ISP)
+Dependency Inversion Principle (DIP)
+
+
+Design Patterns:
+	Understand:
+	•	What is a Design Pattern?
+    •   Introduction to Design Patterns
+
+	Categories: 
+    •	Creational, Structural, Behavioral
+	
+    Common patterns:
+	•	Singleton Design Pattern
+	•	Factory Method
+    •	Abstract Factory
+	•	Observer
+	•	Strategy
+    Optional:
+    •	Builder Pattern
+    •	Prototype Pattern
+	Be ready to answer: “Which design pattern are you using in your current project?”
+
+
+
+
+
+
+All Oops concepts
+Reverse a string program
+Copy constructor
+Vtable working
+
+
+
+
+
+
+
+
+internal working of STLs
+smart pointers - unique,shared
+vtable and vptr
+also getting asked commonly
+
+This is a classic C++ pitfall concept.
+
+
+They asked me . Shared_ptr implementation , copy constructor, std::set for custom class objects , std::map for custom class objects ,
+
+Search All types of constructors
+
+
+I want to delete a node in a linkedlist but i don't have head ptr, we have memory address of the node to be deleted. How to? That was question asked to me in TCS interview. anyone???? Small snippet expected
+
+
+
+HSBC interview questions
+
+1. Own Shared pointer implementation 
+2. ⁠polymorphism 
+3. ⁠which function is called if base class constructor calls some function 
+4. ⁠map and different types of map and it’s time complexity
+5. ⁠type casting 
+6. ⁠some quant related questions on bonds
+
+
+
+BMW TechWord  C++ Interview questions:
+
+What is inline function? why use it? its significance?
+
+What is smart pointer?
+
+casting in c++
+
+what is shared memory? semaphore? 
+
+thread? lamda function? mutex?
+
+template? when it get expand? instantiation?
+
+unique pointer ? make_unique
+
+Rule of Zero, Rule of Three, and Rule of Five of C++ and other rules as well
+
+Design Patterns in C++
+
+shallow copy va deep copy
+
+move constructor and copy constructor
+
+interface class
+
+virtual function
+
+pure virtual function
+
+difference between Inline and macros
+
+virtual destructor usage
+
+how to aviod memory segmentation
+
+and memory leaks
+
+const function 
+static function
+
+can static function use non-static member of class
+
+how const fucntion works 
+
+move sementic
+
+like such question they asked, given for C++ Dev ADAS OSS, project ECLLIpse-R
+
+
+
+
+
+1. What are the different smart pointers and where to use which type of smart pointer.
+
+What is use of weak pointer where we can use?
+
+2. List of the features of cpp version 11, 14 and 17
+
+3. Multithreading and thread pool  ? Different problems and n multithreading? Race condition, Dead lock, producer consumer problem with thread synchronisation 
+
+4. Calback in c++; Inner implementation of unique pointer wrapper class. And stl wrapper class.
+
+5. What is Memory pool in how to create and memory pool in multithreading
+
+4. Why we need to implement user defined copy constructor over default copy constructor of class
+
+5. Use of templates? What if your return value is also template value?
+
+6. Can we overload the destructor? Why we need to derive the destructor as virtual?
+
+7. Lock_guard syntax
+
+8. How unique pointer restricts the from making there owners, as this are just normal wrapper classes and in normal class how class can restrict from making copies. Internal implementation of unique pointer?
+
+
+
+
+
+C++ Interview Preparation Notes (2–3 Years Experience)
+
+⸻
+
+1. OOPS Concepts
+	•	Understand the four main pillars:
+	•	Encapsulation
+	•	Abstraction
+	•	Inheritance
+	•	Polymorphism
+
+2. Polymorphism
+	•	Focus on:
+	•	Compile-time vs Run-time Polymorphism
+	•	Function Overloading and Operator Overloading
+	•	Virtual Functions and their role in run-time polymorphism
+
+3. Abstraction through Virtual Functions
+	•	Understand:
+	•	Abstract Classes
+	•	Pure Virtual Functions
+	•	Interface implementation
+
+4. STL (Standard Template Library)
+	•	Key containers to study:
+	•	Vector
+	•	Map
+	•	Set
+	•	Iterators and algorithms (sort, find, transform, etc.)
+
+5. Multithreading
+	•	Study the following:
+	•	std::thread
+	•	Thread synchronization using mutex, lock_guard, condition_variable
+	•	Deadlocks, race conditions, thread safety
+
+6. Design Patterns
+	•	Understand:
+	•	What is a Design Pattern?
+	•	Categories: Creational, Structural, Behavioral
+	•	Common patterns:
+	•	Singleton
+	•	Factory
+	•	Observer
+	•	Strategy
+	•	Be ready to answer: “Which design pattern are you using in your current project?”
+
+⸻
+
+
+
+
+
+Topic for Morden C++ , let’s try to break down topic , who are new to this ..
+
+Object construction :
+- lvalue & rvalue
+- ⁠rvalue reference 
+- ⁠move Symantec’s 
+- ⁠move constructor 
+- ⁠move assignment 
+- ⁠default member functions 
+
+Auto type deduction
+Range based loop using auto 
+Function pointers related :
+- un-named function Lambda 
+- ⁠functor 
+- ⁠std:function 
+Memory management - 
+- shared pointers 
+Template :
+- veridic templates 
+STL:
+- additional containers related to hash-map
+- ⁠hash related topics 
+- ⁠understand how the existing containers such as vector and others has impact in C++11 , mostly playing with temporaries 
+Concurrency:
+- std:thread
+- ⁠sync
+- ⁠async 
+- ⁠future 
+- ⁠std:mutex
+- ⁠conditional variable
+In general :
+- const expression 
+- ⁠override 
+- ⁠impact of overriding when using smart pointer 
+
+I tied to break it down for beginners , topic wise so that some one can pick only one part and go through topics ..
+
+
+
+
+
+
+
+
+
+Check C++ basics i.e. - OOPS concept , copy constructor related que., 
+
+Static , member intializer list , this pointers
+
+Vitual keyword and internally how its works ,
+
+shallow copy /deep copy ,move constructor, r value reference 
+
+String example using constructor
+
+Template programming
+
+Linked list in detail with coding practice
+
+New, delete , malloc, free uses , differences and internally how it’s works .Advance C++ concept i.e. Virtual constructor
+
+Design patterns i.e. - Abstract factory , factory , singleton [with multithreading]
+
+STL i.e. - Vector , Maps , list , multimap , set with some stl algo operations
+
+Smart pointers with pseudo code .
+
+Lazy initialization in c++ and how to use it .
+
+Multi threading in c++ i.e. - thread objects .
+
+functors , Mutable,Type casting in C++ i.e. Dynamic, static , const , reinterpret with info of where to use which casting .
+
+
+
+
+
+
+
+
+Why std::function is so powerful:
+
+Type safety: No more void* casts or manual context management. std::function enforces the correct signature at compile time.
+Flexibility: Supports anything callable—lambdas, member functions, and more.
+
+
+
+
+
+
+
+
+
+So, please:
+Do not be demotivated. That was my own experience with *closed-minded people in HFT*, ok?
+Not anyone should be like that!
+Prepare yourself with HFT techniques and tricks got from the books, like the following ones:
+code examples up to C++17 (as far as I know, many HFT companies did not switch to C++20 yet).
+FIX protocol
+low-latency techniques like:
+- lock-free
+- bitwise ops
+- memory pooling
+- cache-friendly
+- zero-copy
+- fast logging
+- and others
+
+
+
+I want you to create C++ notes for the all topics we have discussed in this chat, all the topics, all the questions I have asked answer with my question. with proper theory explanation and use the same code exmaples used in this that for the topic. basically I want to make notes of this entire chat with the proper format which i can refer for my revision with all topic same questions and same code examples with thory expalnattion in such way that, I have to explain it to interviwer. keep realted topics near and don't explain topic and sa,e question repetatively. cover all the keywords we have discuused.
+
+You can also create multiple .md file for meaningfull segrigation so notes will be lenghthy and letter it will easy for me to refer it easily.
+
+I'm writing the more questions and topic names below, if those are not covered then include this topics and questions also in this notes:
+Internal implimentaion of unique, shared and weak pointer.
+Rule of Zero, Three, and Five
+Virtual destructor usage
+Different smart pointers and where to use which type
+Features of C++11, 14, and 17
+Internal implimenatation of STL wrapper class
+Internal working of STL containers
+Why implement user-defined copy constructor over default?
+Why derive destructor as virtual?
+How unique_ptr restricts copying - internal implementation?
+what is virtual table and virtual pointers
+ what is this pointer
+Member initializer list?
+Keywords- noexcept, constexpr, overide, mutable, 
+Abstract classes
