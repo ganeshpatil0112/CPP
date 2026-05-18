@@ -791,10 +791,11 @@ using LogString = basic_string<char, char_traits<char>, LoggingAllocator<char>>;
 
 **Complete Interview Notes Index:**
 1. [OOP Fundamentals](1_OOP_Fundamentals.md) - Abstract classes, virtual functions, vtable, polymorphism
-2. [Memory Management](2_Memory_Management.md) - Copy constructors, Rule of 0/3/5, delete operator
+2. [Memory Management](2_Memory_Management.md) - Copy constructors, Rule of 0/3/5, delete operator, dangling pointers, RAII
 3. [Modern C++ Keywords](3_Modern_Cpp_Keywords.md) - noexcept, override, explicit, constexpr, mutable
 4. [Smart Pointers Deep Dive](4_Smart_Pointers_Deep_Dive.md) - unique_ptr, shared_ptr, weak_ptr internals
 5. [STL Internals](5_STL_Internals.md) - Container implementations, iterators, allocators
+6. [Performance Optimization](6_Performance_Optimization.md) - Move semantics, compiler optimizations, cache efficiency
 
 ---
 

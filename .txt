@@ -17,6 +17,11 @@ noexcept in C++?
 explicit in c++
 what is mean by the making constructor and destructor default?
 
+AI interview:
+As a C++ developer how you increased the execution speed of system? - with the move sementics.
+with the move sementics, how you will ensure the deallocating the memory to avaoid dangling pointer. 
+
+
 Finastra C++ questions:
 Based on OOP
 1) what are the OOP concepts/pillars of OPP

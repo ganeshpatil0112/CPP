@@ -1288,3 +1288,4 @@ int main() {
 - [Modern C++ Keywords](3_Modern_Cpp_Keywords.md)
 - [Smart Pointers Deep Dive](4_Smart_Pointers_Deep_Dive.md)
 - [STL Internals](5_STL_Internals.md)
+- [Performance Optimization](6_Performance_Optimization.md)

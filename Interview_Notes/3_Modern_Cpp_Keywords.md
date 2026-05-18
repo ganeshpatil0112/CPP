@@ -707,3 +707,4 @@ public:
 **Next Files:**
 - [Smart Pointers Deep Dive](4_Smart_Pointers_Deep_Dive.md)
 - [STL Internals](5_STL_Internals.md)
+- [Performance Optimization](6_Performance_Optimization.md)

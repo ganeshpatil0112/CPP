@@ -5,6 +5,8 @@
 2. [Rule of Zero, Three, and Five](#rule-of-zero-three-and-five)
 3. [Member Initializer List](#member-initializer-list)
 4. [Delete Operator](#delete-operator)
+5. [Dangling Pointers](#dangling-pointers)
+6. [RAII Principle](#raii-principle)
 
 ---
 
@@ -724,7 +726,1028 @@ delete ptr;
 
 ---
 
+## Dangling Pointers
+
+### **Q: What is a Dangling Pointer?**
+
+**Answer:**
+A **dangling pointer** is a pointer that points to **memory that has already been deleted/freed** or is **no longer valid**. Accessing dangling pointers leads to **undefined behavior** - crashes, corrupted data, or security vulnerabilities.
+
+### **Definition:**
+
+```cpp
+int* ptr = new int(42);  // ptr points to valid memory
+delete ptr;              // Memory freed
+// ptr is now DANGLING - points to freed memory
+*ptr = 100;              // ❌ UNDEFINED BEHAVIOR
+```
+
+**Key Point:** After `delete`, the pointer **still holds the address**, but that address is **no longer valid**. The memory may be reused for other allocations.
+
+---
+
+### **Common Causes of Dangling Pointers:**
+
+#### **1. Using Pointer After Delete:**
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int* ptr = new int(42);
+    cout << *ptr << "\n";  // ✅ OK: 42
+    
+    delete ptr;  // Memory freed
+    
+    // ❌ DANGLING POINTER - undefined behavior!
+    cout << *ptr << "\n";  // May crash, print garbage, or "work"
+    *ptr = 100;            // May corrupt memory
+    
+    return 0;
+}
+```
+
+**What Happens:**
+- Memory is returned to heap
+- Pointer still holds old address
+- That memory may be reused by other allocations
+- Reading/writing causes undefined behavior
+
+---
+
+#### **2. Returning Pointer to Local Variable:**
+
+```cpp
+int* createDanglingPointer() {
+    int x = 42;      // Local variable on stack
+    return &x;       // ❌ DANGER: Returning address of local
+}  // x destroyed here - stack memory reclaimed
+
+int main() {
+    int* ptr = createDanglingPointer();
+    // ptr is DANGLING - points to destroyed stack variable
+    cout << *ptr;  // ❌ Undefined behavior
+    return 0;
+}
+```
+
+**Why It's Dangerous:**
+- Local variables are destroyed when function returns
+- Stack memory is reused by next function call
+- Pointer points to invalid stack location
+
+**Correct Version:**
+```cpp
+int* createValidPointer() {
+    int* ptr = new int(42);  // ✅ Heap allocation
+    return ptr;              // OK - heap memory persists
+}
+
+int main() {
+    int* ptr = createValidPointer();
+    cout << *ptr << "\n";  // ✅ OK: 42
+    delete ptr;             // Don't forget to delete!
+    return 0;
+}
+```
+
+---
+
+#### **3. Object Goes Out of Scope:**
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int* danglingPointer = nullptr;
+
+void createDangling() {
+    int x = 42;
+    danglingPointer = &x;  // ❌ Storing address of local
+}  // x destroyed - danglingPointer now dangling
+
+int main() {
+    createDangling();
+    cout << *danglingPointer;  // ❌ Undefined behavior
+    return 0;
+}
+```
+
+---
+
+#### **4. Multiple Pointers to Same Memory:**
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    int* ptr1 = new int(42);
+    int* ptr2 = ptr1;  // Both point to same memory
+    
+    delete ptr1;  // Memory freed
+    // ptr1 is dangling
+    // ptr2 is also dangling!
+    
+    cout << *ptr2;  // ❌ Undefined behavior
+    delete ptr2;    // ❌ Double delete - crash!
+    
+    return 0;
+}
+```
+
+---
+
+#### **5. Returning Reference to Temporary:**
+
+```cpp
+string& getDanglingReference() {
+    string temp = "Hello";  // Local temporary
+    return temp;            // ❌ Returning reference to temporary
+}  // temp destroyed
+
+int main() {
+    string& ref = getDanglingReference();
+    cout << ref;  // ❌ Undefined behavior
+    return 0;
+}
+```
+
+---
+
+### **Complete Example - All Cases:**
+
+```cpp
+#include <iostream>
+using namespace std;
+
+class MyClass {
+public:
+    int value;
+    MyClass(int v) : value(v) {
+        cout << "Constructor(" << value << ")\n";
+    }
+    ~MyClass() {
+        cout << "Destructor(" << value << ")\n";
+    }
+};
+
+int main() {
+    cout << "=== Case 1: Delete then use ===\n";
+    {
+        MyClass* ptr = new MyClass(1);
+        delete ptr;
+        // ptr->value = 100;  // ❌ DANGLING - would crash
+    }
+    
+    cout << "\n=== Case 2: Out of scope ===\n";
+    {
+        MyClass* ptr;
+        {
+            MyClass obj(2);  // Stack object
+            ptr = &obj;
+        }  // obj destroyed
+        // ptr->value = 100;  // ❌ DANGLING - would crash
+    }
+    
+    cout << "\n=== Case 3: Multiple pointers ===\n";
+    {
+        MyClass* ptr1 = new MyClass(3);
+        MyClass* ptr2 = ptr1;
+        delete ptr1;
+        // Both ptr1 and ptr2 are now dangling
+        // cout << ptr2->value;  // ❌ Would crash
+    }
+    
+    return 0;
+}
+/* Output:
+=== Case 1: Delete then use ===
+Constructor(1)
+Destructor(1)
+
+=== Case 2: Out of scope ===
+Constructor(2)
+Destructor(2)
+
+=== Case 3: Multiple pointers ===
+Constructor(3)
+Destructor(3)
+*/
+```
+
+---
+
+### **How to Prevent Dangling Pointers:**
+
+#### **1. Set to nullptr After Delete:**
+
+```cpp
+int* ptr = new int(42);
+delete ptr;
+ptr = nullptr;  // ✅ No longer dangling
+
+if (ptr) {
+    *ptr = 100;  // Won't execute
+}
+```
+
+**Why This Helps:**
+- `nullptr` is a **safe value** - cannot be dereferenced
+- Easy to check if pointer is valid
+- Deleting `nullptr` is safe (does nothing)
+
+---
+
+#### **2. Use Smart Pointers:**
+
+```cpp
+#include <memory>
+using namespace std;
+
+int main() {
+    // unique_ptr - automatic cleanup
+    {
+        unique_ptr<int> ptr = make_unique<int>(42);
+        // No delete needed - automatic!
+    }  // ptr destroyed, memory freed
+    
+    // shared_ptr - reference counting
+    {
+        shared_ptr<int> ptr1 = make_shared<int>(42);
+        shared_ptr<int> ptr2 = ptr1;  // Share ownership
+        // Memory freed when last shared_ptr destroyed
+    }
+    
+    return 0;
+}
+```
+
+**Benefits:**
+- **Automatic cleanup** - no manual delete
+- **Exception safe** - cleanup even if exception thrown
+- **No dangling pointers** - memory managed correctly
+
+---
+
+#### **3. RAII (Resource Acquisition Is Initialization):**
+
+```cpp
+class ResourceHolder {
+    int* data;
+public:
+    ResourceHolder() : data(new int(42)) {}
+    
+    ~ResourceHolder() {
+        delete data;  // Automatic cleanup
+        data = nullptr;
+    }
+    
+    // Delete copy to prevent multiple owners
+    ResourceHolder(const ResourceHolder&) = delete;
+    ResourceHolder& operator=(const ResourceHolder&) = delete;
+};
+
+int main() {
+    ResourceHolder holder;  // Automatic cleanup in destructor
+    return 0;
+}
+```
+
+---
+
+#### **4. Never Return Address of Local:**
+
+```cpp
+// ❌ WRONG
+int* bad() {
+    int x = 42;
+    return &x;  // Dangling!
+}
+
+// ✅ CORRECT Option 1: Return by value
+int good1() {
+    int x = 42;
+    return x;  // Copy returned
+}
+
+// ✅ CORRECT Option 2: Heap allocation
+int* good2() {
+    return new int(42);  // Caller must delete
+}
+
+// ✅ CORRECT Option 3: Smart pointer
+unique_ptr<int> good3() {
+    return make_unique<int>(42);  // Auto cleanup
+}
+```
+
+---
+
+### **Detecting Dangling Pointers:**
+
+#### **1. Valgrind (Linux/Mac):**
+```bash
+valgrind --leak-check=full ./program
+# Detects:
+# - Invalid reads/writes
+# - Use after free
+# - Memory leaks
+```
+
+#### **2. AddressSanitizer (Compiler Flag):**
+```bash
+g++ -fsanitize=address -g program.cpp -o program
+./program
+# Detects use-after-free at runtime
+```
+
+#### **3. Visual Studio Debug Mode:**
+- Fills freed memory with special pattern (0xDD)
+- Detects use-after-free in debug builds
+
+---
+
+### **Dangling Pointer vs Memory Leak:**
+
+| Issue | Problem | Symptoms |
+|-------|---------|----------|
+| **Dangling Pointer** | Pointer to freed memory | Crashes, undefined behavior, corruption |
+| **Memory Leak** | Memory never freed | Growing memory usage, out of memory |
+
+```cpp
+// Memory Leak - forgot to delete
+int* leak() {
+    int* ptr = new int(42);
+    return nullptr;  // Memory leaked - never freed
+}
+
+// Dangling Pointer - used after delete
+void dangling() {
+    int* ptr = new int(42);
+    delete ptr;
+    *ptr = 100;  // Dangling pointer access
+}
+```
+
+---
+
+### **Real-World Example - Safe Wrapper:**
+
+```cpp
+#include <iostream>
+using namespace std;
+
+template<typename T>
+class SafePointer {
+    T* ptr;
+    bool* valid;  // Shared validity flag
+    
+public:
+    SafePointer(T* p) : ptr(p), valid(new bool(true)) {}
+    
+    ~SafePointer() {
+        if (valid && *valid) {
+            delete ptr;
+            *valid = false;  // Mark as invalid
+        }
+        delete valid;
+    }
+    
+    T& operator*() {
+        if (!valid || !*valid) {
+            throw runtime_error("Dangling pointer access!");
+        }
+        return *ptr;
+    }
+    
+    bool isValid() const {
+        return valid && *valid;
+    }
+};
+
+int main() {
+    SafePointer<int> sp(new int(42));
+    cout << *sp << "\n";  // OK
+    
+    // sp destroyed, memory freed
+    // Any copy would detect invalid access
+    
+    return 0;
+}
+```
+
+---
+
+### **Interview Points:**
+
+**Definition:**
+- Dangling pointer = pointer to freed/invalid memory
+- Causes **undefined behavior** (crashes, corruption, security issues)
+
+**Common Causes:**
+1. Using pointer after `delete`
+2. Returning address of local variable
+3. Object goes out of scope
+4. Multiple pointers to same memory (one deleted)
+5. Container reallocation (vector, string)
+
+**Prevention:**
+1. Set to `nullptr` after delete
+2. Use **smart pointers** (unique_ptr, shared_ptr)
+3. Follow **RAII** principle
+4. Never return address of local variables
+5. Use modern C++ (avoid raw `new`/`delete`)
+
+**Detection Tools:**
+- Valgrind (Linux/Mac)
+- AddressSanitizer (-fsanitize=address)
+- Visual Studio debug mode
+
+**Best Practice:**
+```cpp
+// ❌ Old style - prone to dangling pointers
+int* ptr = new int(42);
+delete ptr;
+
+// ✅ Modern style - no dangling pointers
+auto ptr = make_unique<int>(42);
+// Automatic cleanup, no manual delete
+```
+
+---
+
+## RAII Principle
+
+### **Q: What is RAII (Resource Acquisition Is Initialization)?**
+
+**Answer:**
+RAII is a **C++ programming idiom** where **resource lifetime is bound to object lifetime**. Resources (memory, files, locks, sockets) are **acquired in constructor** and **released in destructor**. This ensures **automatic cleanup** and **exception safety**.
+
+### **Core Principle:**
+
+```
+┌─────────────────────────────────────┐
+│  Object Created                     │
+│    ↓                                │
+│  Constructor acquires resource      │
+│    ↓                                │
+│  Use resource                       │
+│    ↓                                │
+│  Object destroyed (out of scope)    │
+│    ↓                                │
+│  Destructor releases resource       │
+└─────────────────────────────────────┘
+```
+
+**Key Insight:** You **never manually manage resources** - the destructor does it automatically when object goes out of scope.
+
+---
+
+### **Why RAII?**
+
+#### **1. Automatic Cleanup:**
+```cpp
+// ❌ Manual Management - Error-prone
+void processFile() {
+    FILE* file = fopen("data.txt", "r");
+    // ... processing ...
+    fclose(file);  // Must remember to close!
+    // What if exception thrown before fclose?
+}
+
+// ✅ RAII - Automatic cleanup
+void processFile() {
+    ifstream file("data.txt");  // Opens in constructor
+    // ... processing ...
+    // Automatically closed in destructor!
+}
+```
+
+#### **2. Exception Safety:**
+```cpp
+// ❌ Without RAII - Resource leak on exception
+void unsafeFunction() {
+    int* data = new int[1000];
+    
+    processData(data);  // Might throw exception
+    
+    delete[] data;  // Never reached if exception thrown!
+}
+
+// ✅ With RAII - Guaranteed cleanup
+void safeFunction() {
+    vector<int> data(1000);  // RAII container
+    
+    processData(data.data());  // If exception thrown,
+                               // destructor still called!
+}
+```
+
+#### **3. No Manual Delete:**
+```cpp
+// ❌ Manual delete - easy to forget
+void manual() {
+    MyClass* obj = new MyClass();
+    // ... code ...
+    delete obj;  // Must remember!
+}
+
+// ✅ RAII - automatic
+void automatic() {
+    MyClass obj;  // Stack object
+    // ... code ...
+}  // Destructor called automatically
+```
+
+---
+
+### **RAII Examples:**
+
+#### **1. Memory Management - Smart Pointers:**
+
+```cpp
+#include <iostream>
+#include <memory>
+using namespace std;
+
+class Resource {
+public:
+    Resource() { cout << "Resource acquired\n"; }
+    ~Resource() { cout << "Resource released\n"; }
+    void use() { cout << "Using resource\n"; }
+};
+
+// ❌ Manual management
+void manual() {
+    Resource* res = new Resource();
+    res->use();
+    delete res;  // Must remember!
+}
+
+// ✅ RAII with unique_ptr
+void raii() {
+    unique_ptr<Resource> res = make_unique<Resource>();
+    res->use();
+}  // Automatic cleanup!
+
+int main() {
+    cout << "=== Manual ===\n";
+    manual();
+    
+    cout << "\n=== RAII ===\n";
+    raii();
+    
+    return 0;
+}
+/* Output:
+=== Manual ===
+Resource acquired
+Using resource
+Resource released
+
+=== RAII ===
+Resource acquired
+Using resource
+Resource released
+*/
+```
+
+---
+
+#### **2. File Handling:**
+
+```cpp
+#include <fstream>
+#include <iostream>
+using namespace std;
+
+// ❌ C-style - Manual close
+void cStyle() {
+    FILE* file = fopen("data.txt", "w");
+    if (!file) return;
+    
+    fprintf(file, "Hello\n");
+    fclose(file);  // Must remember!
+}
+
+// ✅ RAII - Automatic close
+void raii() {
+    ofstream file("data.txt");  // Opens in constructor
+    if (!file) return;
+    
+    file << "Hello\n";
+}  // Closes in destructor!
+
+// Custom RAII wrapper
+class FileHandle {
+    FILE* file;
+public:
+    FileHandle(const char* filename, const char* mode) 
+        : file(fopen(filename, mode)) {
+        if (!file) throw runtime_error("Failed to open file");
+    }
+    
+    ~FileHandle() {
+        if (file) {
+            fclose(file);
+            cout << "File closed\n";
+        }
+    }
+    
+    FILE* get() { return file; }
+    
+    // Prevent copying
+    FileHandle(const FileHandle&) = delete;
+    FileHandle& operator=(const FileHandle&) = delete;
+};
+
+void useCustomWrapper() {
+    FileHandle file("data.txt", "w");
+    fprintf(file.get(), "Hello\n");
+}  // Automatic close!
+```
+
+---
+
+#### **3. Mutex/Lock Management:**
+
+```cpp
+#include <iostream>
+#include <mutex>
+#include <thread>
+using namespace std;
+
+mutex mtx;
+int sharedData = 0;
+
+// ❌ Manual lock/unlock - Error-prone
+void unsafeIncrement() {
+    mtx.lock();
+    sharedData++;
+    // What if exception here?
+    mtx.unlock();  // Might not be reached!
+}
+
+// ✅ RAII with lock_guard
+void safeIncrement() {
+    lock_guard<mutex> lock(mtx);  // Locks in constructor
+    sharedData++;
+    // Even if exception, destructor unlocks!
+}  // Unlocks in destructor
+
+int main() {
+    thread t1(safeIncrement);
+    thread t2(safeIncrement);
+    
+    t1.join();
+    t2.join();
+    
+    cout << "Final value: " << sharedData << "\n";
+    return 0;
+}
+```
+
+---
+
+#### **4. Database Connections:**
+
+```cpp
+class DatabaseConnection {
+    bool connected;
+public:
+    DatabaseConnection(const string& connStr) {
+        // Connect to database
+        connected = true;
+        cout << "Connected to database\n";
+    }
+    
+    ~DatabaseConnection() {
+        if (connected) {
+            // Close connection
+            cout << "Disconnected from database\n";
+            connected = false;
+        }
+    }
+    
+    void execute(const string& query) {
+        cout << "Executing: " << query << "\n";
+    }
+    
+    // Prevent copying
+    DatabaseConnection(const DatabaseConnection&) = delete;
+    DatabaseConnection& operator=(const DatabaseConnection&) = delete;
+};
+
+void queryDatabase() {
+    DatabaseConnection db("localhost:5432");
+    db.execute("SELECT * FROM users");
+    // Exception or early return - still disconnects!
+}  // Automatic disconnect
+```
+
+---
+
+### **RAII with Move Semantics:**
+
+**Q: With move semantics, how will you ensure deallocation to avoid dangling pointer?**
+
+**Answer:**
+
+**Move semantics + RAII ensures safe deallocation through a three-step mechanism:**
+
+**1. Ownership Transfer:**
+When an object is moved, the **source object transfers ownership** of the resource to the destination object. The source's internal pointer is set to `nullptr` immediately after the transfer. This means the source no longer "owns" the resource.
+
+**2. Safe Source Destruction:**
+When the source object's destructor runs, it checks if the pointer is `nullptr` before attempting deallocation. Since the pointer was nullified during the move, the destructor safely does nothing. This prevents **double deletion**.
+
+**3. Guaranteed Cleanup by Final Owner:**
+The destination object (which now owns the resource) will eventually go out of scope. When it does, its destructor executes and **properly deallocates** the resource. Since only one object ever owns the resource at any time, there's exactly **one deallocation** - no more, no less.
+
+**Why This Prevents Dangling Pointers:**
+- **No double delete:** Source pointer is `nullptr`, so its destructor won't delete again
+- **No memory leak:** Destination object's destructor ensures cleanup
+- **No dangling pointer:** After deallocation by the final owner, no other object holds a pointer to that memory (source has `nullptr`)
+- **Clear ownership:** At any moment, exactly one object owns the resource
+
+**Key Principle:** RAII + Move Semantics = "Whoever owns the resource at destruction time cleans it up." By ensuring only one owner exists at any time (enforced by setting source to `nullptr`), we guarantee exactly one deallocation with no dangling pointers.
+
+**Quick Interview Answer:**
+> "With move semantics, I ensure deallocation without dangling pointers through RAII: The move constructor transfers ownership by copying the pointer and then setting the source's pointer to `nullptr`. When the source object destructs, it checks for `nullptr` and skips deletion. The destination object, being the sole owner, properly deallocates when it destructs. This guarantees exactly one deallocation with no double-delete or dangling pointer issues."
+
+---
+
+**Code Example Demonstrating the Mechanism:**
+
+```cpp
+#include <iostream>
+#include <utility>
+using namespace std;
+
+class RAIIResource {
+    int* data;
+public:
+    // Constructor - Acquire resource
+    RAIIResource(int size) : data(new int[size]) {
+        cout << "Resource acquired (" << data << ")\n";
+    }
+    
+    // Destructor - Release resource
+    ~RAIIResource() {
+        if (data) {
+            cout << "Resource released (" << data << ")\n";
+            delete[] data;
+            data = nullptr;
+        }
+    }
+    
+    // Copy operations deleted
+    RAIIResource(const RAIIResource&) = delete;
+    RAIIResource& operator=(const RAIIResource&) = delete;
+    
+    // Move constructor - Transfer ownership
+    RAIIResource(RAIIResource&& other) noexcept : data(other.data) {
+        other.data = nullptr;  // Source loses ownership
+        cout << "Resource moved (" << data << ")\n";
+    }
+    
+    // Move assignment - Transfer ownership
+    RAIIResource& operator=(RAIIResource&& other) noexcept {
+        if (this != &other) {
+            // Clean up current resource
+            delete[] data;
+            
+            // Transfer ownership
+            data = other.data;
+            other.data = nullptr;
+            
+            cout << "Resource move-assigned (" << data << ")\n";
+        }
+        return *this;
+    }
+};
+
+RAIIResource createResource() {
+    RAIIResource res(100);  // Acquire
+    return res;  // Move (RVO may elide this)
+}  // Original destroyed (but data is nullptr after move)
+
+int main() {
+    cout << "Creating resource...\n";
+    RAIIResource res1 = createResource();
+    
+    cout << "\nMoving resource...\n";
+    RAIIResource res2 = std::move(res1);
+    // res1 no longer owns resource (data = nullptr)
+    // res2 now owns it
+    
+    cout << "\nExiting scope...\n";
+    return 0;
+}
+/* Output:
+Creating resource...
+Resource acquired (0x...)
+Moving resource...
+Resource moved (0x...)
+Exiting scope...
+Resource released (0x...)
+*/
+```
+
+**Key Points:**
+- After move, source object's destructor runs but does nothing (data = nullptr)
+- Destination object's destructor cleans up the resource
+- **No memory leak**, **no dangling pointer**, **no double delete**
+
+---
+
+### **RAII Design Pattern:**
+
+```cpp
+template<typename ResourceType>
+class RAIIWrapper {
+    ResourceType* resource;
+    
+public:
+    // Acquire resource in constructor
+    explicit RAIIWrapper(ResourceType* res) : resource(res) {}
+    
+    // Release resource in destructor
+    ~RAIIWrapper() {
+        cleanup();
+    }
+    
+    // Move semantics
+    RAIIWrapper(RAIIWrapper&& other) noexcept 
+        : resource(other.resource) {
+        other.resource = nullptr;
+    }
+    
+    RAIIWrapper& operator=(RAIIWrapper&& other) noexcept {
+        if (this != &other) {
+            cleanup();
+            resource = other.resource;
+            other.resource = nullptr;
+        }
+        return *this;
+    }
+    
+    // Prevent copying
+    RAIIWrapper(const RAIIWrapper&) = delete;
+    RAIIWrapper& operator=(const RAIIWrapper&) = delete;
+    
+    // Access
+    ResourceType* get() { return resource; }
+    ResourceType& operator*() { return *resource; }
+    ResourceType* operator->() { return resource; }
+    
+private:
+    void cleanup() {
+        if (resource) {
+            delete resource;
+            resource = nullptr;
+        }
+    }
+};
+```
+
+---
+
+### **RAII in Standard Library:**
+
+| Class | Resource Managed | Acquisition | Release |
+|-------|------------------|-------------|----------|
+| **unique_ptr** | Dynamic memory | Constructor | Destructor |
+| **shared_ptr** | Dynamic memory | Constructor | Destructor (last owner) |
+| **vector** | Dynamic array | Constructor/resize | Destructor |
+| **string** | Character array | Constructor | Destructor |
+| **fstream** | File handle | Constructor/open() | Destructor/close() |
+| **lock_guard** | Mutex | Constructor (locks) | Destructor (unlocks) |
+| **unique_lock** | Mutex | Constructor (locks) | Destructor (unlocks) |
+| **thread** | Thread handle | Constructor | Destructor (must join/detach) |
+
+---
+
+### **RAII vs Manual Management:**
+
+```cpp
+// ❌ Manual Management - 5 ways to leak
+void manualManagement() {
+    Resource* res = acquire();
+    
+    if (error1) return;        // Leak #1: Early return
+    if (error2) throw Ex();    // Leak #2: Exception
+    
+    process(res);              // Leak #3: Exception in process
+    
+    if (error3) goto cleanup;  // Leak #4: Forgot goto label
+    
+    release(res);              // Leak #5: Never reached
+cleanup:
+    release(res);
+}
+
+// ✅ RAII - Impossible to leak
+void raiiManagement() {
+    unique_ptr<Resource> res(acquire());
+    
+    if (error1) return;        // ✅ Destructor called
+    if (error2) throw Ex();    // ✅ Destructor called
+    
+    process(res.get());        // ✅ Destructor called on exception
+    
+    if (error3) return;        // ✅ Destructor called
+    
+}  // ✅ Destructor always called
+```
+
+---
+
+### **Common RAII Mistakes:**
+
+#### **1. Creating Temporary:**
+```cpp
+// ❌ WRONG: Creates temporary, destroyed immediately
+lock_guard<mutex>(mtx);  // Lock acquired and released instantly!
+sharedData++;  // Not protected!
+
+// ✅ CORRECT: Named object lives until scope end
+lock_guard<mutex> lock(mtx);
+sharedData++;  // Protected
+```
+
+#### **2. Forgetting to Transfer Ownership:**
+```cpp
+// ❌ WRONG: Local object destroyed, double delete
+unique_ptr<int> getPointer() {
+    int* raw = new int(42);
+    unique_ptr<int> ptr(raw);
+    return unique_ptr<int>(raw);  // ❌ Two owners!
+}
+
+// ✅ CORRECT: Move ownership
+unique_ptr<int> getPointer() {
+    return make_unique<int>(42);  // Move ownership
+}
+```
+
+---
+
+### **Interview Points:**
+
+**Definition:**
+- RAII = Resource Acquisition Is Initialization
+- Resources acquired in constructor, released in destructor
+- Resource lifetime = Object lifetime
+
+**Benefits:**
+1. **Automatic cleanup** - No manual delete/close/free
+2. **Exception safe** - Destructor always called during stack unwinding
+3. **Prevents leaks** - Impossible to forget cleanup
+4. **Prevents dangling pointers** - Memory freed at right time
+5. **Thread-safe** - Works with locks (lock_guard)
+
+**Move Semantics + RAII (Preventing Dangling Pointers):**
+- **Ownership transfer:** Move transfers resource ownership from source to destination
+- **Source nullification:** Source object's pointer immediately set to `nullptr` after move
+- **Safe source destruction:** Source destructor checks `nullptr` and skips deallocation
+- **Destination ownership:** Only destination object owns the resource
+- **Final cleanup:** Destination destructor eventually deallocates the resource
+- **Guarantee:** Exactly one deallocation, no double deletes, no dangling pointers
+- **Key insight:** At any time, exactly one object owns the resource (enforced by `nullptr` in source)
+
+**Standard Library Examples:**
+- Smart pointers: `unique_ptr`, `shared_ptr`
+- Containers: `vector`, `string`, `map`
+- I/O: `ifstream`, `ofstream`
+- Threading: `lock_guard`, `unique_lock`, `thread`
+
+**Best Practice:**
+```cpp
+// ❌ Old C++ (pre-C++11)
+Resource* res = new Resource();
+try {
+    use(res);
+} catch(...) {
+    delete res;
+    throw;
+}
+delete res;
+
+// ✅ Modern C++ (RAII)
+auto res = make_unique<Resource>();
+use(res.get());  // Exception-safe automatically!
+```
+
+**Golden Rule:**
+> In modern C++, you should **almost never** write `new` or `delete` in application code. Let RAII classes (smart pointers, containers) handle it.
+
+---
+
 **Next Files:**
 - [Modern C++ Keywords](3_Modern_Cpp_Keywords.md)
 - [Smart Pointers Deep Dive](4_Smart_Pointers_Deep_Dive.md)
 - [STL Internals](5_STL_Internals.md)
+- [Performance Optimization](6_Performance_Optimization.md)

@@ -821,5 +821,6 @@ Need smart pointer?
 
 ---
 
-**Next File:**
+**Next Files:**
 - [STL Internals](5_STL_Internals.md)
+- [Performance Optimization](6_Performance_Optimization.md)
