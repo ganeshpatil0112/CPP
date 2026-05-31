@@ -298,9 +298,71 @@ A CV can wake a thread even without a notify. **Always wait with a predicate.**
 cv.wait(lk, []{ return ready; });   // safe even with spurious wakeups
 ```
 
+### TOPIC: Condition Variable In C++ Threading
+
+IMPORTANT POINT: CV are used for two purpose
+ 	A. Notify other threads
+ 	B. Waiting for some conditions
+
+1. Condition Variable allows running threads to wait on some conditions and once those conditions are met the waiting thread
+is notified using :
+    - a. notify_one();
+    - b. notify_all();
+2. You need mutex to use condition variable.
+3. If some thread want to wait on some condition then it has to do these things:
+    - a. Acquire the mutex lock using std :: unique_lock<std :: mutex> lock(m) ; .
+    - b. Execute wait, wait for, or wait until. The wait operations atomically release the mutex
+        and suspend the execution of the thread.
+    - c. When the condition variable is notified, the thread is awakened, and the mutex is atomically reacquired.
+        The thread should then check the condition and resume waiting if the wake up was spurious.
+
+NOTE:
+1. Condition variables are used to synchronize two or more threads.
+2. Best use case of condition variable is Producer/Consumer problem.
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+using namespace std;
+
+std::condition variable cv;
+std::mutex m;
+long balance = 0;
+
+void addMoney(int money) {
+	std :: lock_guard<mutex> lg(m) ;
+	balance+=money;
+	cout << "Amount Added Current Balance: " << balance << endl;
+	cv.notify_one();    //This will notify the threads if the threads are wait for the Conditional_Variable notification to check the conditional and proceed. 
+}
+
+void withdrowMoney(int money) {
+	std::unique lock<mutex> ul(m);
+	cv.wait(ul, [] { return (balance != 0) ? true : false; }); //After the mutex lock, thread will wait and in sleep mode here until the notification for the Coditional_Variable comes and that becomes TRUE.
+	if(balance>=money) {
+	balance -= money;
+	cout << "Amount Deducted: " << money << endl;
+	}else{
+	cout << "Amount Can't Be Deducted, Current Balance Is Less Than " << money << endl;
+	}
+	cout << "Current Balance Is: " << balance << endl;
+}
+
+int main() {
+	std :: thread t1(withdrowMoney, 500);
+	std :: this_thread: : sleep_for(std : : chrono: : seconds (2) ) ;|
+	std :: thread t2(addMoney, 500);
+	t1.join();
+	t2.join();
+	return 0;
+}
+```
+
 ---
 
-## 10. Producer–Consumer Problem
+## 10. Producer–Consumer Problem with the Mutex and Conditional variable.
 
 ### Problem
 One or more **producers** put items into a buffer; one or more **consumers** take items out. Must avoid:
@@ -308,45 +370,93 @@ One or more **producers** put items into a buffer; one or more **consumers** tak
 - Producer writing to full buffer.
 - Data corruption from concurrent access.
 
+- Shared buffer (deque<int>) is accessed by two threads → needs synchronization.
+- std::mutex guarantees only one thread touches the buffer at a time.
+- std::condition_variable lets a thread sleep until a condition is true, instead of busy-waiting:
+    - Producer waits while buffer is full.
+    - Consumer waits while buffer is empty.
+- unique_lock is used (not lock_guard) because cond.wait() must be able to unlock the mutex while sleeping and re-lock it on wakeup.
+- notify_one() wakes the other thread after producing/consuming, so it can re-check its predicate.
+
 ### Solution (mutex + condition variable, bounded queue)
 ```cpp
+#include <iostream>
 #include <queue>
+#include <deque>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+using namespace std;
 
-template <typename T>
-class BoundedQueue {
-    std::queue<T> q;
-    std::mutex m;
-    std::condition_variable not_empty, not_full;
-    size_t cap;
-public:
-    explicit BoundedQueue(size_t c) : cap(c) {}
+// ---------- Shared resources ----------
+std::mutex mu;                       // Protects access to the shared buffer
+std::condition_variable cond;        // Used to signal/wait between producer & consumer
+deque<int> buffer;                   // The shared bounded buffer
+const unsigned int maxBufferSize = 50; // Upper bound -> producer must wait if full
 
-    void push(T v) {
-        std::unique_lock<std::mutex> lk(m);
-        not_full.wait(lk, [&]{ return q.size() < cap; });
-        q.push(std::move(v));
-        lk.unlock();
-        not_empty.notify_one();
+// ---------- Producer ----------
+void producer(int val) {
+    while (val) {
+        // unique_lock is REQUIRED here (not lock_guard) because
+        // condition_variable::wait() needs to unlock/relock the mutex.
+        std::unique_lock<std::mutex> locker(mu);
+
+        // Wait until the buffer has space.
+        // wait() atomically: releases the lock + sleeps, then
+        // re-acquires the lock when notified AND predicate is true.
+        // The predicate also protects against "spurious wakeups".
+        cond.wait(locker, [](){ return buffer.size() < maxBufferSize; });
+
+        // Critical section: safe to modify shared buffer
+        buffer.push_back(val);
+        cout << "Produced: " << val << endl;
+        val--;
+
+        // Release lock BEFORE notifying -> consumer won't wake up
+        // only to immediately block on the mutex (minor optimization).
+        locker.unlock();
+
+        // Wake one waiting consumer (if any) so it can re-check its predicate.
+        cond.notify_one();
     }
+}
 
-    T pop() {
-        std::unique_lock<std::mutex> lk(m);
-        not_empty.wait(lk, [&]{ return !q.empty(); });
-        T v = std::move(q.front()); q.pop();
-        lk.unlock();
-        not_full.notify_one();
-        return v;
+// ---------- Consumer ----------
+void consumer() {
+    while (true) {
+        std::unique_lock<std::mutex> locker(mu);
+
+        // Sleep until producer puts something in the buffer.
+        cond.wait(locker, [](){ return buffer.size() > 0; });
+
+        // Critical section: safe to read/remove from buffer
+        int val = buffer.back();
+        buffer.pop_back();
+        cout << "Consumed: " << val << endl;
+
+        locker.unlock();
+
+        // Notify producer in case it was blocked on a full buffer.
+        cond.notify_one();
     }
-};
+}
 
-BoundedQueue<int> bq(10);
+int main() {
+    std::thread t1(producer, 100);
+    std::thread t2(consumer);
 
-void producer() { for (int i = 0; i < 100; ++i) bq.push(i); }
-void consumer() { for (int i = 0; i < 100; ++i) std::cout << bq.pop() << '\n'; }
+    t1.join();   // <-- was missing ';'
+    t2.join();
+    return 0;
+}
 ```
+### Key points to remember for interviews:
+- Why unique_lock over lock_guard? condition_variable::wait must unlock the mutex while waiting — only unique_lock supports that.
+- Why pass a predicate to wait? Protects against spurious wakeups and makes the code equivalent to a while (!pred) cond.wait(lock); loop.
+- notify_one vs notify_all — notify_one is enough here since only one counterpart can make progress per slot.
+- Bounded buffer — without maxBufferSize, the producer would grow memory unboundedly if consumer is slow.
+- Program never exits cleanly — consumer loops forever; in production you'd add a done flag + notify_all to shut it down.
+
 Two CVs (`not_empty`, `not_full`) avoid unnecessary wakeups.
 
 ---
@@ -381,28 +491,118 @@ void worker() {
     // ... use shared resource (max 3 threads here)
     sem.release();          // increment; wake one waiter
 }
+
+-----------------------------------------------------------------------------------------------------------------------------
+binary_semaphore Example:
+
+#include <chrono>
+#include <iostream>
+#include <semaphore>
+#include <thread>
+
+// global binary semaphore instances
+// object counts are set to zero
+// objects are in non-signaled state
+std::binary_semaphore
+    SignalMainToThread{0},
+    SignalThreadToMain{0};
+
+void ThreadProc()
+{
+	// wait for a signal from the main proc
+	// by attempting to decrement the semaphore
+	SignalMainToThread.acquire();
+
+	// this call blocks until the semaphore's count
+	// is increased from the main proc
+	std::cout << "[thread] Got the signal\n"; // response message
+
+	using namespace std: :literals;
+	std::this_thread: : sleep_for(3s) ;
+
+	std::cout << "[thread] Send the signal\n"; // message
+
+	// signal the main proc back
+	SignalThreadToMain. release();
+}
+
+int main()
+{
+	// create some worker th@ad
+	std::thread thrWorker(ThreadProc);
+
+	std::cout << "[main] Send the signal\n"; // message
+
+	// signal the worker thread to start working
+	// by increasing the semaphore's count
+	SignalMainToThread.release();
+
+	// wait until the worker thread is done doing the work
+	// by attempting to decrement the semaphore's count
+	SignalThreadToMain.acquire();
+
+	std::cout << "[main] Got the signal\n"; // response message
+	thrWorker.join();
+}
+
+Key concepts to remember:
+acquire(): Attempts to decrement the semaphore. If the value is 0, the thread blocks until the value becomes greater than 0 (signaled by another thread).
+release(): Increments the semaphore, effectively signaling other threads waiting on it.
+Initialization: The speaker emphasizes that initializing with 0 is critical for signaling because it ensures the thread starts in a blocked state.
 ```
 
 ### Producer–Consumer using semaphores
 ```cpp
-constexpr int N = 10;
-std::counting_semaphore<N> empty_slots{N};   // initially N empty
-std::counting_semaphore<N> filled_slots{0};  // initially 0 filled
-std::mutex m;
-std::queue<int> q;
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+using namespace std;
 
-void producer(int v) {
-    empty_slots.acquire();          // wait for empty slot
-    { std::lock_guard lk(m); q.push(v); }
-    filled_slots.release();         // signal a filled slot
+std::binary_semaphore
+	signal_to_producer{1}, // 1 - Will not stop the thread at the first time.
+	signal_to_consumer{0}; // 0 - Will stop the thread at the first time until CV gets and signal and becomes TRUE.
+
+#define buff_size 5
+int buff[buff_size];
+
+void producer() {
+	while(1) {
+		signal_to_producer.acquire();
+		cout << "Produced =";
+		for(int i=0; i<buff_size; ++i) {
+			buff[i] = i*i; // task of producer
+			cout << buff[i] << "" << std :: flush;
+			std :: this_thread :: sleep_for(milliseconds (200) );
+		}
+	cout << endl;
+	signal_to_consumer.release();
+	}
 }
 
-int consumer() {
-    filled_slots.acquire();
-    int v;
-    { std::lock_guard lk(m); v = q.front(); q.pop(); }
-    empty_slots.release();
-    return v;
+void consumer(){
+	while(1) {
+		signal_to_consumer.acquire();
+		cout << "Consumed =";
+		for(int i=buff_size-1; i>=0; -- i) {
+			cout << buff[i] << "" << std :: flush;
+			buff[i] = 0; // task of consumer
+			std :: this_thread :: sleep_for(milliseconds (200) );
+		}
+		cout << endl; cout << endl;
+		signal_to_producer. release();
+	}
+}
+
+int main()
+{
+	std::thread producer_thread(producer) ;
+	std::thread consumer thread (consumer) ;
+
+	std::cout << "[main] Got the signal\n"; 
+	producer_thread.join();
+	consumer_thread.join();
+	return 0;
 }
 ```
 

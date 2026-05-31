@@ -1,4 +1,8 @@
 #include <mutex>
+#include <iostream>
+#include <deque>
+#include <thread>
+#include <condition_variable>
 // using namespace std;
 
 std::mutex m;
@@ -37,3 +41,90 @@ class multithreading
 };
 
 int multithreading::count = 0;
+
+
+// ============================================================================
+// Producer–Consumer Problem  (std::mutex + std::condition_variable)
+// ----------------------------------------------------------------------------
+// Two threads share a bounded buffer:
+//   - Producer pushes items into the buffer.   Must wait if buffer is FULL.
+//   - Consumer pops items from the buffer.     Must wait if buffer is EMPTY.
+//
+// Why condition_variable?
+//   Without it, threads would have to busy-wait (spin) on the condition,
+//   wasting CPU. condition_variable lets a thread SLEEP until another
+//   thread notifies it that the condition may now be true.
+//
+// Why unique_lock (not lock_guard)?
+//   cond.wait() must atomically UNLOCK the mutex while sleeping and
+//   RE-LOCK it on wakeup. Only unique_lock supports that.
+// ============================================================================
+
+std::mutex                mu;             // Protects the shared buffer
+std::condition_variable   cond;           // Signals between producer & consumer
+std::deque<int>           buffer;         // The shared bounded buffer
+const unsigned int        maxBufferSize = 50;
+
+// ---------------- Producer ----------------
+void producer(int val)
+{
+    while (val)
+    {
+        // unique_lock is required because condition_variable::wait()
+        // needs the ability to unlock/relock the mutex.
+        std::unique_lock<std::mutex> locker(mu);
+
+        // Wait until buffer has space.
+        // The predicate (lambda) protects against "spurious wakeups":
+        // wait() will only return when buffer.size() < maxBufferSize.
+        cond.wait(locker, [](){ return buffer.size() < maxBufferSize; });
+
+        // ----- Critical section -----
+        buffer.push_back(val);
+        std::cout << "Produced: " << val << std::endl;
+        val--;
+        // ----------------------------
+
+        // Unlock BEFORE notifying so the woken consumer doesn't
+        // immediately block again on the mutex (minor optimization).
+        locker.unlock();
+
+        // Wake up one waiting consumer so it can re-check its predicate.
+        cond.notify_one();
+    }
+}
+
+// ---------------- Consumer ----------------
+void consumer()
+{
+    while (true)
+    {
+        std::unique_lock<std::mutex> locker(mu);
+
+        // Sleep until the buffer has at least one item.
+        cond.wait(locker, [](){ return buffer.size() > 0; });
+
+        // ----- Critical section -----
+        int val = buffer.back();
+        buffer.pop_back();
+        std::cout << "Consumed: " << val << std::endl;
+        // ----------------------------
+
+        locker.unlock();
+
+        // Notify producer in case it was blocked on a full buffer.
+        cond.notify_one();
+    }
+}
+
+// ---------------- Driver ----------------
+// Uncomment main() below to run the producer–consumer demo standalone.
+//
+// int main()
+// {
+//     std::thread t1(producer, 100);
+//     std::thread t2(consumer);
+//     t1.join();
+//     t2.join();
+//     return 0;
+// }

@@ -462,6 +462,11 @@ public:
 
 #### **3. Required for Base Class Constructor:**
 
+- Base class must be fully constructed before derived members exist — the derived object literally cannot exist until its base sub-object is built. So the base ctor has to run first.
+- The compiler needs to know which base ctor to run. If a default exists, it picks that silently; otherwise, you must say so. This is the same rule that applies to data members.
+- While constructing a derived class object, the compiler can automatically call only the default constructor of the base class. If the base has no default constructor, or you want to call a parameterized one, the only way is through the member-initializer list.
+
+
 ```cpp
 class Base {
 public:
@@ -1750,4 +1755,5 @@ use(res.get());  // Exception-safe automatically!
 - [Modern C++ Keywords](3_Modern_Cpp_Keywords.md)
 - [Smart Pointers Deep Dive](4_Smart_Pointers_Deep_Dive.md)
 - [STL Internals](5_STL_Internals.md)
-- [Performance Optimization](6_Performance_Optimization.md)
+- [Multithreading Deep Dive](6_Multithreading_Deep_Dive.md)
+- [Performance Optimization](7_Performance_Optimization.md)
